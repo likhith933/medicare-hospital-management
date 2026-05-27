@@ -67,6 +67,17 @@ public class AuthService {
         String mappedRole = null;
         String dbPassword = null;
 
+        // Auto-detect role if not explicitly provided or invalid
+        if (role == null || role.trim().isEmpty() || "null".equalsIgnoreCase(role)) {
+            if (adminRepository.findByEmail(email).isPresent()) {
+                role = "ADMIN";
+            } else if (doctorRepository.findByEmail(email).isPresent()) {
+                role = "DOCTOR";
+            } else if (patientRepository.findByEmail(email).isPresent()) {
+                role = "PATIENT";
+            }
+        }
+
         if ("PATIENT".equalsIgnoreCase(role)) {
             Patient patient = patientRepository.findByEmail(email)
                     .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));

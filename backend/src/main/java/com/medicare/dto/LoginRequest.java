@@ -15,6 +15,5 @@ public class LoginRequest {
     @NotBlank(message = "Password is required")
     private String password;
 
-    @NotBlank(message = "Role is required")
-    private String role; // "PATIENT", "DOCTOR", "ADMIN"
+    private String role; // "PATIENT", "DOCTOR", "ADMIN" (optional, auto-detected if omitted)
 }
