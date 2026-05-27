@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard — MediCare</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">MediCare Portal</div>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Dashboard</a></li>
+            <li><a href="disease-predictor.html">AI Disease Predictor</a></li>
+            <li><a href="book-appointment.html">Book Appointment</a></li>
+            <li><a href="medical-history.html">Medical History</a></li>
+            <li><button class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="Auth.logout()">Logout</button></li>
+        </ul>
+    </nav>
+
+    <!-- Content -->
+    <div class="container" style="text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+            <div>
+                <h1 style="font-family:'Outfit'; font-size:2.2rem; color:var(--bg-primary);">Hello, <span id="user-display-name">Patient</span></h1>
+                <p style="color:var(--text-secondary);">Manage your health consultations and checkups here.</p>
+            </div>
+            <div style="display:flex; gap:1rem;">
+                <a href="disease-predictor.html" class="btn btn-primary">Start AI Prediction</a>
+                <a href="book-appointment.html" class="btn btn-secondary">New Appointment</a>
+            </div>
+        </div>
+
+        <!-- Panel Stats Grid -->
+        <div class="dashboard-grid">
+            <div class="stats-card">
+                <h3>Welcome</h3>
+                <div class="counter" id="user-role-lbl" style="font-size:1.8rem; margin: 1rem 0;">Patient</div>
+                <p style="color:var(--text-secondary);" id="user-email-lbl">patient@medicare.com</p>
+            </div>
+            <div class="stats-card">
+                <h3>Appointments</h3>
+                <div class="counter" id="appointments-count">0</div>
+                <p style="color:var(--text-secondary);">Total scheduled slots</p>
+            </div>
+            <div class="stats-card">
+                <h3>Medical Files</h3>
+                <div class="counter" id="records-count">0</div>
+                <p style="color:var(--text-secondary);"><a href="medical-history.html" style="color:inherit; text-decoration:underline;">View historical entries</a></p>
+            </div>
+        </div>
+
+        <!-- Appointment Logs Table -->
+        <div style="margin-top:3rem;">
+            <h2 style="font-family:'Outfit'; color:var(--bg-primary); margin-bottom:1rem;">Your Appointments</h2>
+            <div class="table-wrapper">
+                <table class="med-table">
+                    <thead>
+                        <tr>
+                            <th>Appt ID</th>
+                            <th>Doctor & Dept</th>
+                            <th>Date</th>
+                            <th>Time Slot</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patient-appointments-list">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reschedule Modal -->
+    <div class="modal" id="reschedule-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit';">Reschedule Appointment</h3>
+                <button onclick="closeRescheduleModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <form id="reschedule-form">
+                <input type="hidden" id="reschedule-app-id">
+                
+                <div class="form-group">
+                    <label for="reschedule-date">Select Date</label>
+                    <input type="date" id="reschedule-date" class="form-control" required onchange="loadRescheduleSlots()">
+                </div>
+                
+                <div class="form-group">
+                    <label>Select Time Slot</label>
+                    <div class="slots-container" id="reschedule-slots-list">
+                        <p style="color:var(--text-secondary); font-size:0.9rem;">Choose a date first...</p>
+                    </div>
+                    <input type="hidden" id="reschedule-slot-value" required>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Reschedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/appointments.js"></script>
+    <script>
+        let currentUser = null;
+        
+        window.addEventListener('DOMContentLoaded', async () => {
+            Auth.checkAuth('ROLE_PATIENT');
+            currentUser = Auth.getUser();
+            
+            // Fill profile display labels
+            document.getElementById('user-display-name').innerText = currentUser.name;
+            document.getElementById('user-email-lbl').innerText = currentUser.email;
+
+            // Load list and metrics
+            await loadDashboardData();
+        });
+
+        async function loadDashboardData() {
+            if (!currentUser) return;
+            await Appointments.loadPatientAppointments(currentUser.id, 'patient-appointments-list');
+            
+            // Count elements to update counters
+            const appRows = document.getElementById('patient-appointments-list').getElementsByTagName('tr');
+            let appCount = appRows.length;
+            if (appRows.length > 0 && appRows[0].cells.length === 1) {
+                // Table indicates no records
+                appCount = 0;
+            }
+            document.getElementById('appointments-count').innerText = appCount;
+            
+            try {
+                const recs = await API.get(`/api/medical-records/${currentUser.id}`);
+                if (recs.success && recs.data) {
+                    document.getElementById('records-count').innerText = recs.data.length;
+                }
+            } catch(e) {
+                console.error("Failed to load patient records count", e);
+            }
+        }
+
+        // Reschedule modal handling
+        let activeDoctorId = null;
+
+        async function openRescheduleModal(appId) {
+            document.getElementById('reschedule-app-id').value = appId;
+            
+            // Get original doctor details to query slots
+            try {
+                const appDetail = await API.get(`/api/appointments/patient/${currentUser.id}`);
+                const appObj = appDetail.data.find(a => a.id === appId);
+                if (appObj) {
+                    activeDoctorId = appObj.doctor.id;
+                }
+            } catch (err) {
+                console.error("Failed to resolve doctor id for reschedule", err);
+            }
+
+            document.getElementById('reschedule-date').value = '';
+            document.getElementById('reschedule-slots-list').innerHTML = '<p style="color:var(--text-secondary); font-size:0.9rem;">Choose a date first...</p>';
+            document.getElementById('reschedule-slot-value').value = '';
+            
+            document.getElementById('reschedule-modal').classList.add('show');
+        }
+
+        function closeRescheduleModal() {
+            document.getElementById('reschedule-modal').classList.remove('show');
+        }
+
+        async function loadRescheduleSlots() {
+            const dateVal = document.getElementById('reschedule-date').value;
+            if (!dateVal || !activeDoctorId) return;
+
+            const container = document.getElementById('reschedule-slots-list');
+            container.innerHTML = '<p>Fetching slots...</p>';
+            document.getElementById('reschedule-slot-value').value = '';
+
+            try {
+                const res = await API.get(`/api/doctors/${activeDoctorId}/slots`);
+                if (res.success && res.data) {
+                    const slots = JSON.parse(res.data);
+                    
+                    // Render slot buttons
+                    container.innerHTML = slots.map(slot => `
+                        <button type="button" class="slot-btn" onclick="selectRescheduleSlot(this, '${slot}')">${slot}</button>
+                    `).join('');
+                }
+            } catch (err) {
+                container.innerHTML = '<p style="color:var(--danger)">Error fetching available slots.</p>';
+            }
+        }
+
+        function selectRescheduleSlot(btn, slot) {
+            const buttons = document.getElementById('reschedule-slots-list').querySelectorAll('.slot-btn');
+            buttons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('reschedule-slot-value').value = slot;
+        }
+
+        document.getElementById('reschedule-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const appId = document.getElementById('reschedule-app-id').value;
+            const date = document.getElementById('reschedule-date').value;
+            const slot = document.getElementById('reschedule-slot-value').value;
+
+            if (!slot) {
+                showToast('Please select a time slot.', 'warning');
+                return;
+            }
+
+            await Appointments.reschedule(appId, date, slot, () => {
+                closeRescheduleModal();
+                loadDashboardData();
+            });
+        });
+    </script>
+</body>
+</html>

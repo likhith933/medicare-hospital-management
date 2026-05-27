@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Disease Predictor — MediCare</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">MediCare</div>
+        <ul class="nav-links">
+            <li><a href="patient-dashboard.html">Dashboard</a></li>
+            <li><a href="#" class="active">AI Disease Predictor</a></li>
+            <li><a href="book-appointment.html">Book Appointment</a></li>
+            <li><a href="medical-history.html">Medical History</a></li>
+            <li><button class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="Auth.logout()">Logout</button></li>
+        </ul>
+    </nav>
+
+    <!-- Content -->
+    <div class="container" style="text-align: left; max-width: 900px;">
+        <h2 style="font-family:'Outfit'; font-size:2.2rem; color:var(--bg-primary); margin-bottom:0.5rem;">AI-Powered Disease Predictor</h2>
+        <p style="color:var(--text-secondary); margin-bottom:2rem;">Select your active symptoms from the chips below. Our Random Forest machine learning model will match them against standard clinical distributions to identify potential diseases and suggest medical specialties.</p>
+
+        <!-- Symptom Selector Card -->
+        <div class="glass-card" style="padding:2.5rem; margin-bottom:2.5rem;">
+            <h3 style="font-family:'Outfit'; margin-bottom:1rem; font-size:1.25rem;">Select Your Symptoms (Select Multiple)</h3>
+            
+            <div class="symptoms-container" id="symptoms-box-container">
+                <!-- Loaded dynamically by predictor.js -->
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2rem;">
+                <button class="btn btn-secondary" onclick="clearSymptomSelections()">Clear All</button>
+                <button class="btn btn-primary" onclick="Predictor.predict('prediction-results-card', 'recommended-doctors-box')">Analyze Symptoms</button>
+            </div>
+        </div>
+
+        <!-- Prediction Result Container -->
+        <div class="result-card" id="prediction-results-card" style="display:none; padding:2rem;">
+            <!-- Loaded dynamically by predictor.js -->
+        </div>
+
+        <!-- Recommended Doctor List Box -->
+        <div id="recommended-doctors-box" style="margin-top:2rem;">
+            <!-- Loaded dynamically by predictor.js -->
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/predictor.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            Auth.checkAuth('ROLE_PATIENT');
+            Predictor.renderChips('symptoms-box-container');
+        });
+
+        function clearSymptomSelections() {
+            Predictor.selectedSymptoms = [];
+            const chips = document.getElementById('symptoms-box-container').querySelectorAll('.symptom-chip');
+            chips.forEach(c => c.classList.remove('selected'));
+            
+            document.getElementById('prediction-results-card').style.display = 'none';
+            document.getElementById('recommended-doctors-box').innerHTML = '';
+        }
+
+        // Action when booking recommended doctor
+        function redirectToBooking(docId) {
+            window.location.href = `book-appointment.html?docId=${docId}`;
+        }
+    </script>
+</body>
+</html>

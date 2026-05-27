@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard — MediCare</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">MediCare Doctor Portal</div>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Consultations</a></li>
+            <li><button class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="Auth.logout()">Logout</button></li>
+        </ul>
+    </nav>
+
+    <!-- Content -->
+    <div class="container" style="text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+            <div>
+                <h1 style="font-family:'Outfit'; font-size:2.2rem; color:var(--bg-primary);">Dr. <span id="doctor-display-name">Specialist</span></h1>
+                <p style="color:var(--text-secondary);">Here is your schedule for patient consultations and diagnosis filings.</p>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="dashboard-grid">
+            <div class="stats-card">
+                <h3>Doctor Profile</h3>
+                <div class="counter" id="doctor-spec" style="font-size:1.6rem; margin: 1rem 0;">Specialization</div>
+                <p style="color:var(--text-secondary);" id="doctor-email">doctor@medicare.com</p>
+            </div>
+            <div class="stats-card">
+                <h3>Assigned Consultations</h3>
+                <div class="counter" id="consultations-count">0</div>
+                <p style="color:var(--text-secondary);">Total appointments scheduled</p>
+            </div>
+            <div class="stats-card">
+                <h3>Doctor Rating</h3>
+                <div class="counter" id="doctor-rating">5.0</div>
+                <p style="color:var(--text-secondary);">Patient reviews average</p>
+            </div>
+        </div>
+
+        <!-- Appointment Logs Table -->
+        <div style="margin-top:3rem;">
+            <h2 style="font-family:'Outfit'; color:var(--bg-primary); margin-bottom:1rem;">Your Consultation Schedule</h2>
+            <div class="table-wrapper">
+                <table class="med-table">
+                    <thead>
+                        <tr>
+                            <th>Appt ID</th>
+                            <th>Patient Name</th>
+                            <th>Date</th>
+                            <th>Time Slot</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="doctor-appointments-list">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Session Modal -->
+    <div class="modal" id="complete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit';">Complete Consultation & File Record</h3>
+                <button onclick="closeCompleteModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <form id="complete-form">
+                <input type="hidden" id="complete-app-id">
+                <input type="hidden" id="complete-patient-id">
+                
+                <div class="form-group">
+                    <label for="record-diagnosis">Diagnosis</label>
+                    <textarea id="record-diagnosis" class="form-control" placeholder="Describe patient symptoms and final diagnosis..." rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="record-prescription">Prescription</label>
+                    <textarea id="record-prescription" class="form-control" placeholder="List medications, dosage, and intake timings..." rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="record-lab">Lab Reports Required (Optional)</label>
+                    <input type="text" id="record-lab" class="form-control" placeholder="e.g. Complete Blood Count, Chest X-Ray">
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCompleteModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">File Record & Complete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/appointments.js"></script>
+    <script>
+        let currentDoctor = null;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            Auth.checkAuth('ROLE_DOCTOR');
+            currentDoctor = Auth.getUser();
+            
+            // Fill labels
+            document.getElementById('doctor-display-name').innerText = currentDoctor.name;
+            document.getElementById('doctor-email').innerText = currentDoctor.email;
+
+            // Fetch details to fill specialization and rating
+            await loadDoctorProfile();
+            await loadAppointmentsList();
+        });
+
+        async function loadDoctorProfile() {
+            try {
+                const res = await API.get('/api/doctors/all');
+                if (res.success && res.data) {
+                    const docDetails = res.data.find(d => d.email === currentDoctor.email);
+                    if (docDetails) {
+                        document.getElementById('doctor-spec').innerText = docDetails.specialization;
+                        document.getElementById('doctor-rating').innerText = docDetails.rating ? docDetails.rating.toFixed(1) : '5.0';
+                    }
+                }
+            } catch(e) {
+                console.error("Failed to load doctor profile details", e);
+            }
+        }
+
+        async function loadAppointmentsList() {
+            if (!currentDoctor) return;
+            await Appointments.loadDoctorAppointments(currentDoctor.id, 'doctor-appointments-list');
+            
+            const rows = document.getElementById('doctor-appointments-list').getElementsByTagName('tr');
+            let count = rows.length;
+            if (rows.length > 0 && rows[0].cells.length === 1) {
+                count = 0;
+            }
+            document.getElementById('consultations-count').innerText = count;
+        }
+
+        // Complete Modal Actions
+        function openCompleteModal(appId, patientId) {
+            document.getElementById('complete-app-id').value = appId;
+            document.getElementById('complete-patient-id').value = patientId;
+            
+            document.getElementById('record-diagnosis').value = '';
+            document.getElementById('record-prescription').value = '';
+            document.getElementById('record-lab').value = '';
+            
+            document.getElementById('complete-modal').classList.add('show');
+        }
+
+        function closeCompleteModal() {
+            document.getElementById('complete-modal').classList.remove('show');
+        }
+
+        document.getElementById('complete-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const appId = document.getElementById('complete-app-id').value;
+            const patientId = document.getElementById('complete-patient-id').value;
+            const diagnosis = document.getElementById('record-diagnosis').value;
+            const prescription = document.getElementById('record-prescription').value;
+            const lab = document.getElementById('record-lab').value;
+
+            await Appointments.complete(appId, patientId, currentDoctor.id, diagnosis, prescription, lab, () => {
+                closeCompleteModal();
+                loadAppointmentsList();
+            });
+        });
+        
+        async function confirmAppointment(appId) {
+            await Appointments.confirm(appId, () => loadAppointmentsList());
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Consultation — MediCare</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">MediCare</div>
+        <ul class="nav-links">
+            <li><a href="patient-dashboard.html">Dashboard</a></li>
+            <li><a href="disease-predictor.html">AI Disease Predictor</a></li>
+            <li><a href="#" class="active">Book Appointment</a></li>
+            <li><a href="medical-history.html">Medical History</a></li>
+            <li><button class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="Auth.logout()">Logout</button></li>
+        </ul>
+    </nav>
+
+    <!-- Content -->
+    <div class="container" style="text-align: left; max-width: 800px;">
+        <div class="glass-card" style="padding: 2.5rem;">
+            <h2 style="font-family:'Outfit'; font-size:2rem; color:var(--bg-primary); margin-bottom:1.5rem; text-align: center;">Book a Consultation</h2>
+            
+            <form id="booking-form">
+                <!-- Specialization Selection -->
+                <div class="form-group">
+                    <label for="book-spec">Filter Doctor By Specialization</label>
+                    <select id="book-spec" class="form-control" onchange="loadDoctorsBySpec()">
+                        <option value="">Select Specialization</option>
+                        <option value="Dermatologist">Dermatologist</option>
+                        <option value="Allergist">Allergist</option>
+                        <option value="Gastroenterologist">Gastroenterologist</option>
+                        <option value="Infectious Disease Specialist">Infectious Disease Specialist</option>
+                        <option value="Endocrinologist">Endocrinologist</option>
+                        <option value="Pulmonologist">Pulmonologist</option>
+                        <option value="Cardiologist">Cardiologist</option>
+                        <option value="Neurologist">Neurologist</option>
+                        <option value="Orthopedist">Orthopedist</option>
+                        <option value="Pediatrician">Pediatrician</option>
+                        <option value="Proctologist">Proctologist</option>
+                        <option value="Vascular Surgeon">Vascular Surgeon</option>
+                        <option value="Rheumatologist">Rheumatologist</option>
+                        <option value="Urologist">Urologist</option>
+                        <option value="General Physician">General Physician</option>
+                    </select>
+                </div>
+
+                <!-- Doctor Selection -->
+                <div class="form-group" id="doctor-group" style="display:none;">
+                    <label for="book-doctor">Choose Doctor</label>
+                    <select id="book-doctor" class="form-control" onchange="onDoctorSelected()"></select>
+                </div>
+
+                <!-- Doctor Details Display -->
+                <div id="doctor-details-box" style="display:none; margin: 1rem 0; padding: 1rem; border-radius: var(--radius-sm); background-color: var(--accent-light); color: var(--accent-hover); font-size: 0.9rem;">
+                    <p id="doc-exp-info"></p>
+                    <p id="doc-rating-info"></p>
+                </div>
+
+                <!-- Date Selection -->
+                <div class="form-group" id="date-group" style="display:none;">
+                    <label for="book-date">Choose Date</label>
+                    <input type="date" id="book-date" class="form-control" required onchange="loadAvailableSlots()">
+                </div>
+
+                <!-- Time Slot Grid Selection -->
+                <div class="form-group" id="slot-group" style="display:none;">
+                    <label>Choose Available Time Slot</label>
+                    <div class="slots-container" id="slots-list-box"></div>
+                    <input type="hidden" id="book-slot-value" required>
+                </div>
+
+                <!-- Symptoms and Notes -->
+                <div class="form-group">
+                    <label for="book-symptoms">Symptom Description</label>
+                    <textarea id="book-symptoms" class="form-control" placeholder="Briefly describe what symptoms you are experiencing..." rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="book-notes">Additional Notes</label>
+                    <textarea id="book-notes" class="form-control" placeholder="Any previous treatment, chronic disease, or requests..." rows="2"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1.5rem; display:none;" id="book-submit-btn">Schedule Consultation</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/appointments.js"></script>
+    <script>
+        let currentUser = null;
+        let selectedDocIdFromQuery = null;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            Auth.checkAuth('ROLE_PATIENT');
+            currentUser = Auth.getUser();
+
+            // Set minimum date constraint to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('book-date').min = today;
+
+            // Check if redirecting from predictor recommending a specific doctor ID
+            const params = new URLSearchParams(window.location.search);
+            selectedDocIdFromQuery = params.get('docId');
+            if (selectedDocIdFromQuery) {
+                await loadDoctorDetailsDirectly(selectedDocIdFromQuery);
+            }
+        });
+
+        async function loadDoctorsBySpec() {
+            const spec = document.getElementById('book-spec').value;
+            const docGroup = document.getElementById('doctor-group');
+            const docSelect = document.getElementById('book-doctor');
+
+            docGroup.style.display = 'none';
+            document.getElementById('doctor-details-box').style.display = 'none';
+            document.getElementById('date-group').style.display = 'none';
+            document.getElementById('slot-group').style.display = 'none';
+            document.getElementById('book-submit-btn').style.display = 'none';
+
+            if (!spec) return;
+
+            try {
+                const res = await API.get(`/api/doctors/${spec}`);
+                if (res.success && res.data) {
+                    const doctors = res.data;
+                    if (doctors.length === 0) {
+                        showToast(`No doctors available in ${spec}`, 'warning');
+                        return;
+                    }
+                    docSelect.innerHTML = '<option value="">Choose a Doctor</option>' + 
+                        doctors.map(d => `<option value="${d.id}" data-exp="${d.experience}" data-rating="${d.rating}">Dr. ${d.name} (${d.experience} yrs exp)</option>`).join('');
+                    
+                    docGroup.style.display = 'block';
+                }
+            } catch (err) {
+                console.error("Failed to load doctors", err);
+            }
+        }
+
+        async function loadDoctorDetailsDirectly(docId) {
+            try {
+                const res = await API.get('/api/doctors/all');
+                if (res.success && res.data) {
+                    const doctor = res.data.find(d => d.id == docId);
+                    if (doctor) {
+                        // Fill specialization
+                        document.getElementById('book-spec').value = doctor.specialization;
+                        
+                        // Populate doctor dropdown
+                        const docSelect = document.getElementById('book-doctor');
+                        docSelect.innerHTML = `<option value="${doctor.id}" selected>Dr. ${doctor.name}</option>`;
+                        document.getElementById('doctor-group').style.display = 'block';
+
+                        // Show stats box
+                        onDoctorSelected(doctor.experience, doctor.rating);
+
+                        // Show date selector
+                        document.getElementById('date-group').style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load direct doctor details", err);
+            }
+        }
+
+        function onDoctorSelected(exp, rtg) {
+            const select = document.getElementById('book-doctor');
+            const selectedOpt = select.options[select.selectedIndex];
+            
+            const experience = exp || selectedOpt.getAttribute('data-exp');
+            const rating = rtg || selectedOpt.getAttribute('data-rating');
+
+            if (!select.value) {
+                document.getElementById('doctor-details-box').style.display = 'none';
+                document.getElementById('date-group').style.display = 'none';
+                document.getElementById('slot-group').style.display = 'none';
+                document.getElementById('book-submit-btn').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('doc-exp-info').innerText = `Experience: ${experience} Years`;
+            document.getElementById('doc-rating-info').innerText = `Rating: ★ ${parseFloat(rating).toFixed(1)}`;
+            document.getElementById('doctor-details-box').style.display = 'block';
+            
+            document.getElementById('date-group').style.display = 'block';
+            document.getElementById('book-date').value = '';
+            document.getElementById('slot-group').style.display = 'none';
+            document.getElementById('book-submit-btn').style.display = 'none';
+        }
+
+        async function loadAvailableSlots() {
+            const docId = document.getElementById('book-doctor').value;
+            const dateVal = document.getElementById('book-date').value;
+            
+            const slotGroup = document.getElementById('slot-group');
+            const submitBtn = document.getElementById('book-submit-btn');
+            const container = document.getElementById('slots-list-box');
+
+            slotGroup.style.display = 'none';
+            submitBtn.style.display = 'none';
+            document.getElementById('book-slot-value').value = '';
+
+            if (!docId || !dateVal) return;
+
+            container.innerHTML = '<p>Loading available slots...</p>';
+            slotGroup.style.display = 'block';
+
+            try {
+                const res = await API.get(`/api/doctors/${docId}/slots`);
+                if (res.success && res.data) {
+                    const slots = JSON.parse(res.data);
+                    
+                    if (slots.length === 0) {
+                        container.innerHTML = '<p style="color:var(--danger)">No slots configured for this doctor.</p>';
+                        return;
+                    }
+
+                    container.innerHTML = slots.map(slot => `
+                        <button type="button" class="slot-btn" onclick="selectSlot(this, '${slot}')">${slot}</button>
+                    `).join('');
+                }
+            } catch (err) {
+                container.innerHTML = '<p style="color:var(--danger)">Error fetching available slots.</p>';
+            }
+        }
+
+        function selectSlot(btn, slot) {
+            const buttons = document.getElementById('slots-list-box').querySelectorAll('.slot-btn');
+            buttons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            
+            document.getElementById('book-slot-value').value = slot;
+            document.getElementById('book-submit-btn').style.display = 'inline-flex';
+        }
+
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const doctorId = document.getElementById('book-doctor').value;
+            const date = document.getElementById('book-date').value;
+            const slot = document.getElementById('book-slot-value').value;
+            const symptoms = document.getElementById('book-symptoms').value;
+            const notes = document.getElementById('book-notes').value;
+
+            if (!slot) {
+                showToast('Please select a time slot.', 'warning');
+                return;
+            }
+
+            await Appointments.book(currentUser.id, doctorId, date, slot, symptoms, notes);
+        });
+    </script>
+</body>
+</html>

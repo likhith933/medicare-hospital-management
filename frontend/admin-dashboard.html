@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — MediCare</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">MediCare Admin</div>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Hospital Overview</a></li>
+            <li><button class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="Auth.logout()">Logout</button></li>
+        </ul>
+    </nav>
+
+    <!-- Content -->
+    <div class="container" style="text-align: left;">
+        <h1 style="font-family:'Outfit'; font-size:2.2rem; color:var(--bg-primary); margin-bottom:2rem;">Hospital Administration Portal</h1>
+
+        <!-- Stats Overview Cards -->
+        <div class="dashboard-grid">
+            <div class="stats-card">
+                <h3>Total Patients</h3>
+                <div class="counter" id="stat-patients">0</div>
+                <p style="color:var(--text-secondary);">Registered accounts</p>
+            </div>
+            <div class="stats-card">
+                <h3>Active Doctors</h3>
+                <div class="counter" id="stat-doctors">0</div>
+                <p style="color:var(--text-secondary);">On-duty specialists</p>
+            </div>
+            <div class="stats-card">
+                <h3>Scheduled Appointments</h3>
+                <div class="counter" id="stat-appointments">0</div>
+                <p style="color:var(--text-secondary);">Total bookings log</p>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:3rem; margin-top:4rem;">
+            <!-- Register Doctor Form -->
+            <div class="glass-card" style="padding:2rem; height:fit-content;">
+                <h3 style="font-family:'Outfit'; margin-bottom:1.5rem; border-bottom: 2px solid var(--accent-light); padding-bottom:0.5rem;">Register New Doctor</h3>
+                <form id="doc-register-form">
+                    <div class="form-group">
+                        <label for="doc-name">Doctor Name</label>
+                        <input type="text" id="doc-name" class="form-control" placeholder="Dr. Jane Smith" required>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:1rem;">
+                        <div class="form-group">
+                            <label for="doc-spec">Specialization</label>
+                            <select id="doc-spec" class="form-control" required>
+                                <option value="">Select Dept</option>
+                                <option value="Dermatologist">Dermatologist</option>
+                                <option value="Allergist">Allergist</option>
+                                <option value="Gastroenterologist">Gastroenterologist</option>
+                                <option value="Infectious Disease Specialist">Infectious Disease Specialist</option>
+                                <option value="Endocrinologist">Endocrinologist</option>
+                                <option value="Pulmonologist">Pulmonologist</option>
+                                <option value="Cardiologist">Cardiologist</option>
+                                <option value="Neurologist">Neurologist</option>
+                                <option value="Orthopedist">Orthopedist</option>
+                                <option value="Pediatrician">Pediatrician</option>
+                                <option value="Proctologist">Proctologist</option>
+                                <option value="Vascular Surgeon">Vascular Surgeon</option>
+                                <option value="Rheumatologist">Rheumatologist</option>
+                                <option value="Urologist">Urologist</option>
+                                <option value="General Physician">General Physician</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="doc-exp">Experience (Yrs)</label>
+                            <input type="number" id="doc-exp" class="form-control" placeholder="8" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="doc-phone">Phone Number</label>
+                        <input type="tel" id="doc-phone" class="form-control" placeholder="+1 (555) 123-4567" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="doc-email">Email Address</label>
+                        <input type="email" id="doc-email" class="form-control" placeholder="smith@medicare.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="doc-password">Portal Password</label>
+                        <input type="password" id="doc-password" class="form-control" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Available Slots (Comma-separated)</label>
+                        <input type="text" id="doc-slots" class="form-control" value="09:00 AM, 10:00 AM, 11:00 AM, 02:00 PM, 03:00 PM" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Add Doctor Profile</button>
+                </form>
+            </div>
+
+            <!-- Management Section -->
+            <div>
+                <!-- Hospital Consultations List -->
+                <h3 style="font-family:'Outfit'; margin-bottom:1rem;">All Consultations</h3>
+                <div class="table-wrapper" style="margin-top:0; max-height:350px; overflow-y:auto;">
+                    <table class="med-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Date & Slot</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-appointments-list">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Patients List -->
+                <h3 style="font-family:'Outfit'; margin-bottom:1rem; margin-top:3rem;">Manage Patient Directory</h3>
+                <div class="table-wrapper" style="margin-top:0; max-height:350px; overflow-y:auto;">
+                    <table class="med-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-patients-list">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', async () => {
+            Auth.checkAuth('ROLE_ADMIN');
+            await loadAdminStats();
+            await loadAppointments();
+            await loadPatientsList();
+        });
+
+        async function loadAdminStats() {
+            try {
+                const res = await API.get('/api/admin/stats');
+                if (res.success && res.data) {
+                    const stats = res.data;
+                    document.getElementById('stat-patients').innerText = stats.totalPatients;
+                    document.getElementById('stat-doctors').innerText = stats.totalDoctors;
+                    document.getElementById('stat-appointments').innerText = stats.totalAppointments;
+                }
+            } catch (err) {
+                console.error("Failed to load hospital metrics", err);
+            }
+        }
+
+        async function loadAppointments() {
+            const container = document.getElementById('admin-appointments-list');
+            container.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            try {
+                const res = await API.get('/api/admin/appointments/all');
+                if (res.success && res.data) {
+                    const list = res.data;
+                    if (list.length === 0) {
+                        container.innerHTML = '<tr><td colspan="5">No appointments in system.</td></tr>';
+                        return;
+                    }
+                    container.innerHTML = list.map(app => `
+                        <tr>
+                            <td>#${app.id}</td>
+                            <td>${app.patient.name}</td>
+                            <td>Dr. ${app.doctor.name}</td>
+                            <td>${app.appointmentDate} (${app.timeSlot})</td>
+                            <td><span class="badge badge-${app.status.toLowerCase()}">${app.status}</span></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                container.innerHTML = '<tr><td colspan="5" style="color:var(--danger)">Error loading.</td></tr>';
+            }
+        }
+
+        async function loadPatientsList() {
+            const container = document.getElementById('admin-patients-list');
+            container.innerHTML = '<tr><td colspan="5">Loading directory...</td></tr>';
+            try {
+                // To fetch all patients, let's call a general query or get stats/details.
+                // In Spring Boot, we can fetch all patients. Since there's no direct "/api/patients/all" endpoint,
+                // let's fetch individual patient records, or we can mock/fetch via stats or lookups.
+                // Wait! Is there an endpoint for patient listing?
+                // REST API ENDPOINTS has:
+                // "DELETE /api/admin/patient/{id}"
+                // Since there is no explicit GET /api/admin/patients endpoint in REST API ENDPOINTS, but patients exist in the appointments list,
+                // we can collect patient lists from all appointments or from another fetch.
+                // Wait, let's create a custom mapping if needed, or simply extract unique patients from all appointments to populate this table, or add a simple mapping.
+                // An elegant solution: we can fetch all appointments, and extract unique patients from it to display in this list!
+                // Yes! That works out-of-the-box and uses the available endpoints without modifying the REST API schema!
+                const res = await API.get('/api/admin/appointments/all');
+                if (res.success && res.data) {
+                    const appointments = res.data;
+                    const patientsMap = new Map();
+                    appointments.forEach(app => {
+                        if (app.patient) {
+                            patientsMap.set(app.patient.id, app.patient);
+                        }
+                    });
+                    
+                    const patients = Array.from(patientsMap.values());
+                    
+                    if (patients.length === 0) {
+                        container.innerHTML = '<tr><td colspan="5">No patient records found in current appointments.</td></tr>';
+                        return;
+                    }
+                    
+                    container.innerHTML = patients.map(p => `
+                        <tr>
+                            <td>#${p.id}</td>
+                            <td>${p.name} (Age: ${p.age})</td>
+                            <td>${p.email}</td>
+                            <td>${p.phone}</td>
+                            <td>
+                                <button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="deletePatientRecord(${p.id})">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                container.innerHTML = '<tr><td colspan="5" style="color:var(--danger)">Error loading patient registry.</td></tr>';
+            }
+        }
+
+        async function deletePatientRecord(id) {
+            if (!confirm('Are you sure you want to delete this patient account? All associated records will be lost.')) return;
+            try {
+                const res = await API.delete(`/api/admin/patient/${id}`);
+                if (res.success) {
+                    showToast('Patient account deleted successfully', 'success');
+                    await loadAdminStats();
+                    await loadAppointments();
+                    await loadPatientsList();
+                }
+            } catch (err) {
+                console.error("Failed to delete patient", err);
+            }
+        }
+
+        // Register Doctor Submission
+        document.getElementById('doc-register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('doc-name').value;
+            const specialization = document.getElementById('doc-spec').value;
+            const experience = parseInt(document.getElementById('doc-exp').value);
+            const phone = document.getElementById('doc-phone').value;
+            const email = document.getElementById('doc-email').value;
+            const password = document.getElementById('doc-password').value;
+            
+            // Format slots array
+            const slotsText = document.getElementById('doc-slots').value;
+            const slotsArray = slotsText.split(',').map(s => s.trim());
+            const availableSlots = JSON.stringify(slotsArray);
+
+            try {
+                const res = await API.post('/api/doctors/register', {
+                    name,
+                    specialization,
+                    experience,
+                    phone,
+                    email,
+                    password,
+                    availableSlots
+                });
+                
+                if (res.success) {
+                    showToast('Doctor registered successfully!', 'success');
+                    document.getElementById('doc-register-form').reset();
+                    await loadAdminStats();
+                }
+            } catch (err) {
+                console.error("Doctor registration failed", err);
+            }
+        });
+    </script>
+</body>
+</html>

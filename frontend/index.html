@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediCare — Smart Hospital Management System</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">MediCare</div>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Home</a></li>
+            <li><a href="register.html">Patient Register</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="hero-section">
+            <div class="hero-text">
+                <h1>AI-Powered Smart Hospital Portal</h1>
+                <p>Welcome to MediCare, where cutting-edge clinical management meets Artificial Intelligence. Predict diseases based on symptoms, book instant consultations, and manage medical histories seamlessly.</p>
+                <div style="display:flex; gap:1rem;">
+                    <a href="register.html" class="btn btn-primary">Patient Register</a>
+                    <a href="#login-anchor" class="btn btn-secondary">Access Portal</a>
+                </div>
+            </div>
+            
+            <div class="glass-card auth-card" id="login-anchor">
+                <div class="auth-header">
+                    <h2>Portal Access</h2>
+                    <p style="color:var(--text-secondary); margin-top:0.25rem;">Select your portal role to log in</p>
+                </div>
+                
+                <!-- Role Tabs -->
+                <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem; background:#cbd5e140; padding:0.25rem; border-radius:var(--radius-sm);">
+                    <button class="btn btn-secondary" style="flex:1; border:none; padding:0.5rem; font-size:0.85rem;" id="tab-patient" onclick="switchRole('PATIENT')">Patient</button>
+                    <button class="btn btn-secondary" style="flex:1; border:none; padding:0.5rem; font-size:0.85rem;" id="tab-doctor" onclick="switchRole('DOCTOR')">Doctor</button>
+                    <button class="btn btn-secondary" style="flex:1; border:none; padding:0.5rem; font-size:0.85rem;" id="tab-admin" onclick="switchRole('ADMIN')">Admin</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form">
+                    <input type="hidden" id="login-role" value="PATIENT">
+                    
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" id="login-email" class="form-control" placeholder="name@medicare.com" required autocomplete="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Sign In</button>
+                </form>
+                
+                <div class="auth-footer" id="signup-prompt">
+                    New Patient? <a href="register.html">Create an Account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Check if user is already logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = Auth.getUser();
+            if (user) {
+                Auth.redirectToDashboard(user.role);
+            }
+            switchRole('PATIENT');
+        });
+
+        // Tab Switching Logic
+        function switchRole(role) {
+            document.getElementById('login-role').value = role;
+            
+            // Remove active classes
+            document.getElementById('tab-patient').style.background = 'transparent';
+            document.getElementById('tab-doctor').style.background = 'transparent';
+            document.getElementById('tab-admin').style.background = 'transparent';
+            
+            document.getElementById('tab-patient').style.color = 'var(--text-secondary)';
+            document.getElementById('tab-doctor').style.color = 'var(--text-secondary)';
+            document.getElementById('tab-admin').style.color = 'var(--text-secondary)';
+
+            // Set active class
+            const activeTab = document.getElementById(`tab-${role.toLowerCase()}`);
+            activeTab.style.background = 'white';
+            activeTab.style.color = 'var(--accent)';
+            activeTab.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+
+            // Hide/Show Patient Registration prompt
+            const prompt = document.getElementById('signup-prompt');
+            if (role === 'PATIENT') {
+                prompt.style.display = 'block';
+            } else {
+                prompt.style.display = 'none';
+            }
+        }
+
+        // Handle Login Submission
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const role = document.getElementById('login-role').value;
+            
+            await Auth.login(email, password, role);
+        });
+    </script>
+</body>
+</html>

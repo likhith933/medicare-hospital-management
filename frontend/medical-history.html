@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical History — MediCare</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">MediCare</div>
+        <ul class="nav-links">
+            <li><a href="patient-dashboard.html">Dashboard</a></li>
+            <li><a href="disease-predictor.html">AI Disease Predictor</a></li>
+            <li><a href="book-appointment.html">Book Appointment</a></li>
+            <li><a href="#" class="active">Medical History</a></li>
+            <li><button class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="Auth.logout()">Logout</button></li>
+        </ul>
+    </nav>
+
+    <!-- Content -->
+    <div class="container" style="text-align: left;">
+        <h2 style="font-family:'Outfit'; font-size:2.2rem; color:var(--bg-primary); margin-bottom:0.5rem;">Your Medical History</h2>
+        <p style="color:var(--text-secondary); margin-bottom:2.5rem;">A secure, persistent ledger of all your consultations, diagnoses, and prescriptions written by MediCare doctors.</p>
+
+        <!-- Medical History Table -->
+        <div class="table-wrapper">
+            <table class="med-table">
+                <thead>
+                    <tr>
+                        <th>Record ID</th>
+                        <th>Visit Date</th>
+                        <th>Consulted Doctor</th>
+                        <th>Diagnosis Summary</th>
+                        <th>Prescribed Medications</th>
+                        <th>Lab Reports Ordered</th>
+                    </tr>
+                </thead>
+                <tbody id="medical-records-list">
+                    <!-- Loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', async () => {
+            Auth.checkAuth('ROLE_PATIENT');
+            const currentUser = Auth.getUser();
+            if (currentUser) {
+                await loadMedicalRecords(currentUser.id);
+            }
+        });
+
+        async function loadMedicalRecords(patientId) {
+            const container = document.getElementById('medical-records-list');
+            container.innerHTML = '<tr><td colspan="6">Loading medical files...</td></tr>';
+
+            try {
+                const res = await API.get(`/api/medical-records/${patientId}`);
+                if (res.success && res.data) {
+                    const records = res.data;
+                    if (records.length === 0) {
+                        container.innerHTML = '<tr><td colspan="6">No medical history entries found.</td></tr>';
+                        return;
+                    }
+
+                    container.innerHTML = records.map(rec => `
+                        <tr>
+                            <td>#REC-${rec.id}</td>
+                            <td><strong>${rec.visitDate}</strong></td>
+                            <td>Dr. ${rec.doctor.name} (${rec.doctor.specialization})</td>
+                            <td>${rec.diagnosis}</td>
+                            <td><span style="font-family:monospace; font-size:0.9rem; white-space:pre-line;">${rec.prescription}</span></td>
+                            <td>${rec.labReports ? rec.labReports : 'None'}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                container.innerHTML = '<tr><td colspan="6" style="color:var(--danger)">Error loading your medical record logs.</td></tr>';
+            }
+        }
+    </script>
+</body>
+</html>
