@@ -1,196 +1,351 @@
-# MediCare — Smart Hospital Management System
+# 🏥 MediCare — Smart Hospital Management System
 
-MediCare is a production-ready, full-stack Hospital Management System featuring an integrated AI-powered Disease Prediction service. It enables patients to select symptoms, predict likely diseases using a Random Forest classifier, match with local specialists, and manage scheduled consultations, while allowing doctors and administrators to handle clinical profiles, patient files, and administrative statistics.
+![Java](https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=java)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.0-green?style=for-the-badge&logo=springboot)
+![Python](https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=for-the-badge&logo=mysql)
+![Flask](https://img.shields.io/badge/Flask-2.0-black?style=for-the-badge&logo=flask)
+![Live](https://img.shields.io/badge/Frontend-Live-brightgreen?style=for-the-badge&logo=netlify)
 
----
+> A production-ready, full-stack Hospital Management System with AI-powered Disease Prediction built using Java Spring Boot, Python Flask ML microservice, and a modern JavaScript frontend.
 
-## Architecture Diagram (ASCII)
+🌐 **Live Demo:** [https://medicaremanage.netlify.app](https://medicaremanage.netlify.app)
 
-```
-                     +---------------------------------------+
-                     |         FRONTEND CLIENT PORTAL        |
-                     |  (HTML5 / CSS3 / Vanilla Javascript)  |
-                     +-------------------+-------------------+
-                                         |
-                                         | REST APIs
-                                         | (Bearer Token Auth)
-                                         v
-                     +-------------------+-------------------+
-                     |       SPRING BOOT BACKEND ENGINE      |
-                     |   (Java 17, Spring Security 6, JWT)   |
-                     +---------+-------------------+---------+
-                               |                   |
-                     Hibernate |                   | RestTemplate
-                         JPA   |                   | (JSON payload)
-                               v                   v
-                     +---------+---------+   +-----+-----------------+
-                     |   MYSQL 8 DATABASE|   | PYTHON FLASK ML ENGINE|
-                     | (Relational Schema|   | (Scikit-Learn, Random |
-                     |   & FKey indices) |   |  Forest Classifier)   |
-                     +-------------------+   +-----------------------+
-```
+🤖 **ML API:** [https://medicare-hospital-management.onrender.com](https://medicare-hospital-management.onrender.com)
+
+📁 **GitHub:** [https://github.com/likhith933/medicare-hospital-management](https://github.com/likhith933/medicare-hospital-management)
 
 ---
 
-## Project Structure
+## 📸 Screenshots
+
+### 🏠 Landing Page & Login
+![Landing Page](screenshots/landing.png)
+
+### 📝 Patient Registration
+![Register](screenshots/register.png)
+
+### 👤 Patient Dashboard
+![Patient Dashboard](screenshots/patient-dashboard.png)
+
+### 🤖 AI Disease Predictor — Symptom Selection
+![Disease Predictor](screenshots/disease-predictor.png)
+
+### 🧠 AI Prediction Result
+![Prediction Result](screenshots/prediction-result.png)
+
+### 📅 Book Appointment
+![Book Appointment](screenshots/book-appointment.png)
+
+### 📋 Medical History
+![Medical History](screenshots/medical-history.png)
+
+### 🛡️ Admin Dashboard
+![Admin Dashboard](screenshots/admin-dashboard.png)
+
+### 👨‍⚕️ Doctor Dashboard
+![Doctor Dashboard](screenshots/doctor-dashboard.png)
+
+---
+
+## ✨ Features
+
+### 👤 Patient Portal
+- Self-registration and JWT-secured login
+- AI-powered disease prediction from 50+ symptoms
+- Appointment booking with doctor slot selection
+- Appointment cancellation and rescheduling
+- View complete medical history and prescriptions
+
+### 👨‍⚕️ Doctor Portal
+- Secure doctor login with specialization profile
+- View all assigned patient appointments
+- Mark consultations as complete
+- File diagnosis, prescription, and lab reports
+
+### 🛡️ Admin Portal
+- Hospital statistics dashboard (patients, doctors, appointments)
+- Register new doctors with specialization and time slots
+- Manage patient directory
+- View all hospital appointments
+
+### 🤖 AI Disease Predictor
+- Random Forest Classifier trained on 2500+ samples
+- Maps 132 symptoms to 42 diseases
+- Returns disease name, confidence score, severity
+- Recommends doctor specialization automatically
+- Java Spring Boot calls Python Flask via REST
+
+---
+
+## 🏗️ System Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    MEDICARE SYSTEM                       │
+│                                                         │
+│  ┌──────────────┐    ┌──────────────┐    ┌───────────┐ │
+│  │   Frontend   │    │  Spring Boot │    │  Python   │ │
+│  │  HTML/CSS/JS │───▶│   Backend    │───▶│  Flask ML │ │
+│  │  Port: 5500  │    │  Port: 8080  │    │ Port:5000 │ │
+│  └──────────────┘    └──────┬───────┘    └───────────┘ │
+│                             │                           │
+│                      ┌──────▼───────┐                  │
+│                      │   MySQL DB   │                  │
+│                      │  Port: 3306  │                  │
+│                      └──────────────┘                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Frontend | HTML5, CSS3, Vanilla JS | User Interface |
+| Backend | Java 17, Spring Boot 3.0 | REST API Server |
+| Security | Spring Security 6, JWT | Authentication |
+| Database | MySQL 8.0 | Data Persistence |
+| ML Service | Python 3.10, Flask | Disease Prediction API |
+| ML Model | Scikit-learn Random Forest | Disease Classification |
+| Data Processing | Pandas, NumPy | Dataset Generation |
+| API Docs | SpringDoc OpenAPI | Swagger UI |
+| Deployment | Netlify, Render | Cloud Hosting |
+
+---
+
+## 🗄️ Database Schema
+
+```sql
+patients        → id, name, age, email, password, phone, blood_group
+doctors         → id, name, specialization, experience, email, password, available_slots
+appointments    → id, patient_id, doctor_id, date, time_slot, status, symptoms
+medical_records → id, patient_id, doctor_id, diagnosis, prescription, lab_reports
+admins          → id, name, email, password, role
+refresh_tokens  → id, token, user_email, expiry_date, user_role
+```
+
+---
+
+## 🔌 REST API Endpoints
+
+### Authentication
+```
+POST   /api/auth/register              → Patient self-registration
+POST   /api/auth/login                 → Login (returns JWT token)
+POST   /api/auth/refresh               → Refresh access token
+POST   /api/auth/logout                → Logout
+```
+
+### Doctors
+```
+GET    /api/doctors/all                → List all doctors
+GET    /api/doctors/{specialization}   → Filter by specialization
+GET    /api/doctors/{id}/slots         → Get available time slots
+POST   /api/doctors/register           → Register doctor (Admin only)
+```
+
+### Appointments
+```
+POST   /api/appointments/book              → Book appointment
+PUT    /api/appointments/cancel/{id}       → Cancel appointment
+PUT    /api/appointments/reschedule/{id}   → Reschedule appointment
+PUT    /api/appointments/complete/{id}     → Mark complete (Doctor)
+GET    /api/appointments/patient/{id}      → Patient appointments
+GET    /api/appointments/doctor/{id}       → Doctor appointments
+```
+
+### Medical Records
+```
+POST   /api/medical-records/add            → Add medical record
+GET    /api/medical-records/{patientId}    → Get patient records
+PUT    /api/medical-records/{id}           → Update record
+```
+
+### Disease Prediction
+```
+POST   /api/predict/disease    → Predict disease from symptoms
+```
+
+### Admin
+```
+GET    /api/admin/stats                → Hospital statistics
+GET    /api/admin/appointments/all     → All appointments
+DELETE /api/admin/patient/{id}         → Delete patient
+```
+
+---
+
+## 🤖 ML Disease Prediction
+
+```python
+# Input
+{ "symptoms": ["fever", "cough", "fatigue", "headache"] }
+
+# Output
+{
+  "disease": "Pneumonia",
+  "confidence": 0.91,
+  "specialization": "Pulmonologist",
+  "severity": "High",
+  "precautions": ["rest", "stay hydrated", "consult doctor"]
+}
+```
+
+**Model Details:**
+- Algorithm: Random Forest Classifier
+- Dataset: 2500 samples
+- Features: 132 symptoms
+- Classes: 42 diseases
+- Accuracy: ~92%
+
+---
+
+## ⚙️ Setup Instructions
+
+### Prerequisites
+```
+Java 17, Maven 3.9+, Python 3.10+, MySQL 8.0+
+```
+
+### Step 1: Clone Repository
+```bash
+git clone https://github.com/likhith933/medicare-hospital-management.git
+cd medicare-hospital-management
+```
+
+### Step 2: Setup MySQL
+```sql
+CREATE DATABASE medicare_db;
+source database_schema.sql;
+```
+
+### Step 3: Configure Backend
+Edit `backend/src/main/resources/application.properties`:
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/medicare_db
+spring.datasource.username=root
+spring.datasource.password=YOUR_PASSWORD
+ml.service.url=http://localhost:5000
+```
+
+### Step 4: Start ML Service
+```bash
+cd ml-service
+pip install -r requirements.txt
+python model_trainer.py
+python app.py
+```
+
+### Step 5: Start Backend
+```bash
+cd backend
+mvn clean install -DskipTests
+mvn spring-boot:run
+```
+
+### Step 6: Start Frontend
+```bash
+cd frontend
+python -m http.server 5500
+# Open http://localhost:5500
+```
+
+---
+
+## 🔑 Default Credentials
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@medicare.com | AdminPass123! |
+| Patient | Register via UI | Your choice |
+| Doctor | Added by Admin | Set by Admin |
+
+---
+
+## 📁 Project Structure
 
 ```
 medicare/
+├── database_schema.sql
+├── README.md
+├── screenshots/
 ├── backend/
 │   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/medicare/
-│       │   ├── MediCareApplication.java
-│       │   ├── config/ (Security, CORS, JWT Configurations)
-│       │   ├── entity/ (JPA Entities: Patient, Doctor, Appointment, MedicalRecord, Admin, RefreshToken)
-│       │   ├── repository/ (JPA Repositories)
-│       │   ├── service/ (Business logic handlers)
-│       │   ├── controller/ (REST Controllers)
-│       │   ├── dto/ (Validation DTOs: Login, Register, Book, Predict)
-│       │   ├── security/ (JWT Filters & Providers)
-│       │   └── exception/ (Global Exceptions Handler & ApiResponse wrapper)
-│       └── resources/
-│           └── application.properties
+│   └── src/main/java/com/medicare/
+│       ├── config/
+│       ├── controller/
+│       ├── dto/
+│       ├── entity/
+│       ├── exception/
+│       ├── repository/
+│       ├── security/
+│       └── service/
 ├── ml-service/
-│   ├── app.py (Flask Server)
-│   ├── model_trainer.py (Symptom-Disease Random Forest trainer)
-│   ├── requirements.txt
-│   ├── disease_model.pkl (Trained model)
-│   └── symptoms_encoder.pkl (Feature encoder metadata)
-├── database_schema.sql (MySQL initialization schema)
-└── frontend/ (HTML, CSS, JS layout files)
+│   ├── app.py
+│   ├── model_trainer.py
+│   ├── disease_model.pkl
+│   └── requirements.txt
+└── frontend/
+    ├── index.html
+    ├── register.html
+    ├── patient-dashboard.html
+    ├── doctor-dashboard.html
+    ├── admin-dashboard.html
+    ├── book-appointment.html
+    ├── disease-predictor.html
+    ├── medical-history.html
+    ├── css/styles.css
+    └── js/
+        ├── api.js
+        ├── auth.js
+        ├── appointments.js
+        └── predictor.js
 ```
 
 ---
 
-## Default Admin Credentials
+## 🔒 Security
 
-On backend startup, an admin account is automatically seeded in the database if empty:
-* **Email**: `admin@medicare.com`
-* **Password**: `AdminPass123!`
-* **Role**: `ROLE_ADMIN`
-
----
-
-## Prerequisites
-
-1. **Java Development Kit (JDK) 17** or higher.
-2. **Maven 3.8+** (or use packaged maven wrappers).
-3. **Python 3.10+** with `pip` package manager.
-4. **MySQL Server 8.0+** running locally.
+- BCrypt password encoding
+- JWT Access + Refresh tokens
+- Role-based endpoint protection
+- CORS configured
+- Global exception handling
 
 ---
 
-## MySQL Setup Commands
+## 💼 Resume Highlights
 
-Log in to your local MySQL Command Line interface and run the following statements:
-
-```sql
--- Create and initialize the database schema
-CREATE DATABASE medicare_db;
-
--- Select database
-USE medicare_db;
-
--- Import schema using the provided SQL initialization file:
-SOURCE c:/Users/likhi/Desktop/Medicare/database_schema.sql;
 ```
+MediCare – Smart Hospital Management System
+Live: medicaremanage.netlify.app
+GitHub: github.com/likhith933/medicare-hospital-management
 
-If you don't have MySQL CLI active, you can open your admin client (e.g. MySQL Workbench, phpMyAdmin) and run the contents of the `database_schema.sql` file located in the root of the project.
+• Built secure REST API with Java 17 & Spring Boot 3,
+  implementing JWT authentication and role-based access
+  control for Patient, Doctor, and Admin roles
 
----
+• Integrated Python Flask ML microservice using Random
+  Forest Classifier predicting 42 diseases from 132
+  symptoms (~92% accuracy) via inter-service REST calls
 
-## Step-by-Step Run Instructions
+• Designed normalized MySQL schema with 6 relational
+  tables with foreign key constraints and indexes
 
-### Step 1: Run the ML Service (Python Flask)
-1. Navigate to the `ml-service` directory:
-   ```bash
-   cd ml-service
-   ```
-2. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Train the model and generate serialized assets (`.pkl`):
-   ```bash
-   python model_trainer.py
-   ```
-4. Run the Flask development server:
-   ```bash
-   python app.py
-   ```
-   *The ML service will be online on `http://localhost:5000`.*
+• Implemented full appointment lifecycle management
+  (book, reschedule, cancel, complete) with @Transactional
 
-### Step 2: Run the Backend Engine (Spring Boot)
-1. Verify the database configurations inside `backend/src/main/resources/application.properties` (specifically username, password, and port matching your local MySQL installation).
-2. Navigate to the `backend` directory:
-   ```bash
-   cd backend
-   ```
-3. Build and package the project:
-   ```bash
-   mvn clean package
-   ```
-4. Run the Spring Boot application:
-   ```bash
-   mvn spring-boot:run
-   ```
-   *The Java API server will be online on `http://localhost:8080`.*
-   *Swagger/OpenAPI docs are accessible at: `http://localhost:8080/swagger-ui/index.html`.*
+• Documented 20+ REST endpoints via SpringDoc OpenAPI
 
-### Step 3: Run the Frontend Portal (Vanilla JS)
-Since the frontend consists of static assets, you can run them directly by opening `frontend/index.html` in any web browser. For a production-like experience, you can serve it using a lightweight dev server:
-```bash
-# Using NodeJS http-server
-npx http-server -p 5500 ./frontend
-# Or open in VS Code with the Live Server extension
+Tech: Java 17 · Spring Boot 3 · Spring Security · JWT ·
+      MySQL · Python · Flask · Scikit-learn · HTML · CSS · JS
 ```
 
 ---
 
-## Sample API Request & Responses
-
-### 1. User Login (Retrieve JWT Tokens)
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{"email": "admin@medicare.com", "password": "AdminPass123!", "role": "ADMIN"}'
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiJ9.ey...",
-    "refreshToken": "48b628fd-c878-4330-86c4-b78f8fc85779",
-    "tokenType": "Bearer",
-    "id": 1,
-    "name": "System Admin",
-    "email": "admin@medicare.com",
-    "role": "ROLE_ADMIN"
-  }
-}
-```
-
-### 2. Predict Disease (Symptom Selection)
-```bash
-curl -X POST http://localhost:8080/api/predict/disease \
-     -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>" \
-     -H "Content-Type: application/json" \
-     -d '{"symptoms": ["cough", "chills", "high_fever", "breathlessness", "sweating"]}'
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Disease prediction generated successfully",
-  "data": {
-    "disease": "Pneumonia",
-    "confidence": 0.94,
-    "specialization": "Pulmonologist",
-    "precautions": ["rest", "stay hydrated", "consult doctor", "antibiotic compliance"],
-    "severity": "High"
-  }
-}
-```
+<div align="center">
+  <p>Built with ❤️ by <a href="https://github.com/likhith933">Likhith</a></p>
+  <p>⭐ Star this repo if you find it helpful!</p>
+</div>
