@@ -20,7 +20,7 @@
 ## 📸 Screenshots
 
 ### 🏠 Landing Page & Login
-![Landing Page](screenshots/landing.png)
+![Landing Page](https://raw.githubusercontent.com/likhith933/medicare-hospital-management/main/screenshots/landing.png)
 
 ### 📝 Patient Registration
 ![Register](screenshots/register.png)
